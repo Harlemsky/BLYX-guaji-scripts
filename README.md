@@ -42,7 +42,6 @@
 ## 自动打BOSS刷金币：自定义路线
 
 打 Boss 模式支持自定义传送路线，只需编辑 `config/boss_path.json`，无需改代码。
-
 - `routes`：路线集合，界面下拉框可切换；每轮循环自动重新读取，改完无需重启
 - 每个 Boss 条目：
   - `name`：名称（随意；名字含 `xb` 表示不打 Boss，只过图）
@@ -50,7 +49,7 @@
   - `steps`：传送到位后的走位序列，每步包含：
     - `direction`：方向，可选 `up` / `down` / `left` / `right` / `left_up` / `left_down` / `right_up` / `right_down`
     - `drag_time`：拖拽秒数，越久走得越远
-    - `pause_time`：停留/战斗秒数（可省略）
+    - `pause_time`：停留/战斗秒数（对于非boss需要进行停留战斗的需要进行填写，比如攻击路上的小兵）
 - `refresh_enabled`：打完一轮后是否执行 5-1 换图回城刷新（`false` 则只循环）
 - `refresh`：刷新目标地图/层数/等待秒数
 - `timing`：`after_kill_pause`（打完到回城的间隔）、`after_go_home_pause`（回城后等待）
