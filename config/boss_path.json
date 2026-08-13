@@ -1,0 +1,166 @@
+{
+  "routes": {
+    "默认路线": {
+      "bosses": [
+        {
+          "name": "2-1",
+          "map": 2,
+          "level": 1,
+          "steps": [
+            { "direction": "right", "drag_time": 2.0, "pause_time": 1.5 }
+          ]
+        },
+        {
+          "name": "3-1",
+          "map": 3,
+          "level": 1,
+          "steps": [
+            { "direction": "right_down", "drag_time": 2.5, "pause_time": 0 },
+            { "direction": "left_down", "drag_time": 3.6, "pause_time": 1 },
+            { "direction": "down", "drag_time": 6.0, "pause_time": 1 }
+          ]
+        },
+        {
+          "name": "3-2",
+          "map": 3,
+          "level": 2,
+          "steps": [
+            { "direction": "left", "drag_time": 7.2 }
+          ]
+        },
+        {
+          "name": "3-3",
+          "map": 3,
+          "level": 3,
+          "steps": [
+            { "direction": "right", "drag_time": 1.8, "pause_time": 0 },
+            { "direction": "up", "drag_time": 1.3, "pause_time": 2 }
+          ]
+        },
+        {
+          "name": "4-1",
+          "map": 4,
+          "level": 1,
+          "steps": [
+            { "direction": "down", "drag_time": 4.2, "pause_time": 3.5 }
+          ]
+        }
+      ],
+      "refresh_enabled": true,
+      "refresh": {
+        "map": 5,
+        "level": 1,
+        "wait_seconds": 10
+      },
+      "timing": {
+        "after_kill_pause": 1,
+        "after_go_home_pause": 6
+      }
+    },
+    "1-2路线": {
+      "bosses": [
+        {
+          "name": "1-2",
+          "map": 1,
+          "level": 2,
+          "steps": [
+            { "direction": "right", "drag_time": 0.5, "pause_time": 0 },
+            { "direction": "up", "drag_time": 1.5, "pause_time": 0 },
+            { "direction": "right", "drag_time": 0.2, "pause_time": 0 },
+            { "direction": "up", "drag_time": 2.0, "pause_time": 2.0 }
+          ]
+        },
+        {
+          "name": "2-1-xb",
+          "map": 2,
+          "level": 1,
+          "steps": [
+            { "direction": "right", "drag_time": 0.1, "pause_time": 0},
+            { "direction": "down", "drag_time": 1.2, "pause_time": 3.0 },
+            { "direction": "left", "drag_time": 0.6, "pause_time": 3.0 },
+            { "direction": "left_up", "drag_time": 2.5, "pause_time": 6.0 }
+          ]
+        },
+        {
+          "name": "2-1",
+          "map": 2,
+          "level": 1,
+          "steps": [
+            { "direction": "right", "drag_time": 1.2, "pause_time": 3.0 }
+          ]
+        },
+        {
+          "name": "2-2-xb",
+          "map": 2,
+          "level": 2,
+          "steps": [
+            { "direction": "up", "drag_time": 1.5, "pause_time": 8.0 },
+            { "direction": "up", "drag_time": 0.2, "pause_time": 3.0 },
+            { "direction": "up", "drag_time": 0.2, "pause_time": 3.0 },
+            { "direction": "left", "drag_time": 1.2, "pause_time": 8.0 },
+            { "direction": "down", "drag_time": 1.0, "pause_time": 6.0 }
+          ]
+        },
+        {
+          "name": "2-2",
+          "map": 2,
+          "level": 2,
+          "steps": [
+            { "direction": "up", "drag_time": 0.5, "pause_time": 0 },
+            { "direction": "right", "drag_time": 1.5, "pause_time": 3.0 },
+            { "direction": "up", "drag_time": 3.0, "pause_time": 4.0 },
+            { "direction": "left", "drag_time": 0.5, "pause_time": 0 },
+            { "direction": "up", "drag_time": 1.8, "pause_time": 4 },
+            { "direction": "left", "drag_time": 0.2, "pause_time": 0.0 },
+            { "direction": "up", "drag_time": 1.5, "pause_time": 0 },
+            { "direction": "left_up", "drag_time": 0.5, "pause_time": 5.0 }
+          ]
+        },
+        {
+          "name": "3-1",
+          "map": 3,
+          "level": 1,
+          "steps": [
+            { "direction": "right_down", "drag_time": 2.5, "pause_time": 0 },
+            { "direction": "left_down", "drag_time": 3.6, "pause_time": 5.0 },
+            { "direction": "down", "drag_time": 4.5, "pause_time": 7.0 }
+          ]
+        },
+        {
+          "name": "3-1.1",
+          "map": 3,
+          "level": 1,
+          "steps": [
+            { "direction": "down", "drag_time": 0.2, "pause_time": 0 },
+            { "direction": "right", "drag_time": 4.0, "pause_time": 0 },
+            { "direction": "right_up", "drag_time": 0.5, "pause_time": 0 },
+            { "direction": "right_down", "drag_time": 3.0, "pause_time": 4.0 },
+            { "direction": "right", "drag_time": 7.5, "pause_time": 14.0 }
+          ]
+        },
+        {
+          "name": "3-2",
+          "map": 3,
+          "level": 2,
+          "steps": [
+            { "direction": "up", "drag_time": 2.8, "pause_time": 5.0 },
+            { "direction": "right_up", "drag_time": 3.0, "pause_time": 8.0 },
+            { "direction": "up", "drag_time": 1, "pause_time": 0 },
+            { "direction": "right_up", "drag_time": 2.0, "pause_time": 0.0},
+            { "direction": "up", "drag_time": 0.5, "pause_time": 12.0}
+          ]
+        }
+      ],
+      "refresh_enabled": false,
+      "refresh": {
+        "map": 5,
+        "level": 1,
+        "wait_seconds": 10
+      },
+      "timing": {
+        "after_kill_pause": 1,
+        "after_go_home_pause": 6
+      }
+    }
+  }
+}

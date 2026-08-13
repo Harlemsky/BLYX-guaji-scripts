@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+
+# 本机配置（不提交：校准坐标与界面设置随机器变化）
+config/calibration.json
+config/gui_settings.json
+
+# 只保留 Windows 编译版，Mac 版可执行文件不上传
+scripts/挂机脚本
+
+# 截图源文件（未裁剪的整屏截图，不入库）
+templates_src/
+
+# 位置参考图（公开仓库不上传）
+图*.png
