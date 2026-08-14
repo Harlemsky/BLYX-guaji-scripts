@@ -59,6 +59,7 @@ class CalibrationApp:
         }
         self.selected_key = None
         self.map_positions = {}
+        self.level_positions = {}
 
         self._build_ui()
         self._load_existing()
@@ -140,8 +141,13 @@ class CalibrationApp:
         self.width_var.set(str(data.get("window_width_cm", 14)))
         self.height_var.set(str(data.get("window_height_cm", 25)))
         saved = data.get("points", {})
-        positions = data.get("map_positions", {})
+        if not isinstance(saved, dict):
+            saved = {}
+        # 兼容两种位置：统一以 points 内为准，顶层旧格式作为兜底
+        positions = saved.get("map_positions") or data.get("map_positions") or {}
         self.map_positions = positions if isinstance(positions, dict) else {}
+        levels = saved.get("level_positions") or data.get("level_positions") or {}
+        self.level_positions = levels if isinstance(levels, dict) else {}
         for key, point in saved.items():
             if key in self.points:
                 self.points[key]["cal_x"] = point.get("x")
@@ -251,9 +257,11 @@ class CalibrationApp:
         if not points:
             messagebox.showwarning("提示", "还没有任何校准数据")
             return
-        data = {"window_width_cm": w, "window_height_cm": h, "points": points}
         if self.map_positions:
-            data["map_positions"] = self.map_positions
+            points["map_positions"] = self.map_positions
+        if self.level_positions:
+            points["level_positions"] = self.level_positions
+        data = {"window_width_cm": w, "window_height_cm": h, "points": points}
         rect = get_game_rect()
         if rect:
             data["window_origin"] = [rect[0], rect[1]]

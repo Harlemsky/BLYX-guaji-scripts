@@ -239,14 +239,19 @@ class AutoPlay(ABC):
         bx, by = get_map_pos(m)
         return bx * self.__scale_x, by * self.__scale_y
 
-    # 层数列表第 l 项位置（优先校准值）
+    # 层数列表第 l 项位置：优先每层实测坐标，其次第1项+间距推算，最后基准坐标
     def _level_pos(self, l):
-        point = self.__calib_points.get("level") if self.__calib_points else None
-        if point and point.get("x") is not None and point.get("y") is not None:
-            x = float(point["x"])
-            shift = float(point.get("shift", DEFAULT_LEVEL_SHIFT * self.__scale_y))
-            y = float(point["y"]) + (l - 1) * shift
-            return x, y
+        if self.__calib_points:
+            positions = self.__calib_points.get("level_positions")
+            if positions and str(l) in positions:
+                x, y = positions[str(l)]
+                return float(x), float(y)
+            point = self.__calib_points.get("level")
+            if point and point.get("x") is not None and point.get("y") is not None:
+                x = float(point["x"])
+                shift = float(point.get("shift", DEFAULT_LEVEL_SHIFT * self.__scale_y))
+                y = float(point["y"]) + (l - 1) * shift
+                return x, y
         bx, by = get_level_pos(l)
         return bx * self.__scale_x, by * self.__scale_y
 

@@ -329,6 +329,8 @@ def create_window():
                 use_first_transport=first_transport_var.get(),
                 use_refresh=boss_refresh_var.get(),
             )
+            # 勾选=本次启动使用首次坐标，启动后自动取消勾选
+            first_transport_var.set(False)
             status_var.set("状态: 运行中 - " + mode)
             start_btn.config(state=tk.DISABLED)
             stop_btn.config(state=tk.NORMAL)
@@ -351,6 +353,8 @@ def create_window():
         global current_task
         if current_task:
             current_task.stop_task()
+            # 停止挂机时，若仍勾选着也一并取消
+            first_transport_var.set(False)
             status_var.set("状态: 已停止")
             start_btn.config(state=tk.NORMAL)
             stop_btn.config(state=tk.DISABLED)
