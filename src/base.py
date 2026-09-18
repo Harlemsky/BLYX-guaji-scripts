@@ -7,7 +7,7 @@ from pathlib import Path
 import pyautogui
 from vision import get_game_rect, template_available, wait_for, wait_screen_stable, wait_until_gone
 
-# 校准文件：由校准工具生成，存在且窗口尺寸匹配时优先使用其中的绝对像素坐标
+# 校准文件：由校准工具生成；只要文件在就用里面的绝对像素坐标，窗口尺寸仅作记录
 CALIBRATION_PATH = Path(__file__).resolve().parent.parent / "config" / "calibration.json"
 
 # 鼠标上下左右偏移量
@@ -16,8 +16,8 @@ DEFAULT_SHIFT = 45
 DEFAULT_DRAG_TIME = 2
 # 停留打怪时间
 DEFAULT_PAUSE_TIME = 2.3
-# 拖拽
-DEFAULT_DURATION = 0.5
+# 拖拽/点击鼠标移动动画时长（0.15 秒，保留移动优化）
+DEFAULT_DURATION = 0.15
 # 移动方向
 MOVE_UP = 0
 MOVE_DOWN = 1
@@ -76,6 +76,28 @@ def load_calibration():
         return None
 
 
+def calibration_size(calib):
+    """校准记录里的窗口尺寸 (宽, 高)。
+
+    优先用 calibrated_width_cm / calibrated_height_cm（只有“保存校准”会写，
+    记录的是捕获坐标那一刻的窗口尺寸）；老校准文件没有这两个字段时，退回
+    window_width_cm / window_height_cm。读不到返回 None。
+    """
+    if not calib:
+        return None
+    w = calib.get("calibrated_width_cm")
+    h = calib.get("calibrated_height_cm")
+    if w is None or h is None:
+        w = calib.get("window_width_cm")
+        h = calib.get("window_height_cm")
+    if w is None or h is None:
+        return None
+    try:
+        return float(w), float(h)
+    except (TypeError, ValueError):
+        return None
+
+
 class AutoPlay(ABC):
     """自动操作执行器"""
     def __init__(self, width: float=DEFAULT_WIDTH, height: float=DEFAULT_HEIGHT, all_auto: bool=True):
@@ -83,12 +105,9 @@ class AutoPlay(ABC):
         self.__scale_x = width / DEFAULT_WIDTH
         self.__scale_y = height / DEFAULT_HEIGHT
         calib = load_calibration()
-        # 校准只在窗口尺寸与保存时一致时生效
-        if calib and abs(float(calib.get("window_width_cm", -1)) - width) < 0.05 \
-                and abs(float(calib.get("window_height_cm", -1)) - height) < 0.05:
-            self.__calib_points = calib.get("points", {})
-        else:
-            self.__calib_points = {}
+        # 有校准就直接用校准坐标：窗口尺寸只是记录，不参与点击位置的计算，
+        # 所以填多少、含不含标题栏都不影响点位。窗口真的改过大小才需要重新校准。
+        self.__calib_points = calib.get("points", {}) if calib else {}
         center = self.__calib_points.get("center") if self.__calib_points else None
         if center and center.get("x") is not None and center.get("y") is not None:
             self.__center_x = int(float(center["x"]))
@@ -117,6 +136,7 @@ class AutoPlay(ABC):
         self.__is_running = True
         self.__is_first_transport = True
         self.__use_first_transport = True
+        self.__transport_wait = None
 
     # 移动基础函数
     def move(self, direction: int, drag_time: float=DEFAULT_DRAG_TIME, pause_time: float=DEFAULT_PAUSE_TIME):
@@ -206,14 +226,18 @@ class AutoPlay(ABC):
             pyautogui.moveTo(
                 x=x*self.__scale_x + self.__win_offset_x,
                 y=y*self.__scale_y + self.__win_offset_y,
-                duration=0.5,
+                duration=DEFAULT_DURATION,
             )
             pyautogui.click()
 
     # 点击绝对像素坐标
     def _click_pixel(self, x, y):
         if self.__is_running:
-            pyautogui.moveTo(x=x + self.__win_offset_x, y=y + self.__win_offset_y, duration=0.5)
+            pyautogui.moveTo(
+                x=x + self.__win_offset_x,
+                y=y + self.__win_offset_y,
+                duration=DEFAULT_DURATION,
+            )
             pyautogui.click()
 
     # 取校准坐标（绝对像素）；没有则回退到 基准坐标×缩放
@@ -283,9 +307,6 @@ class AutoPlay(ABC):
     def transport(self, m, l):
         self.move_to_program()
         self.click_transport()
-        # 有传送菜单模板时，确认菜单真的打开了；没打开就再点一次
-        if template_available("transport_menu") and not wait_for("transport_menu", timeout=2.5):
-            self.click_transport()
         map_x, map_y = self._map_pos(m)
         self._click_pixel(map_x, map_y)
         time.sleep(0.2)
@@ -302,10 +323,16 @@ class AutoPlay(ABC):
         else:
             time.sleep(8)
         elapsed = time.time() - started
-        # 传送后角色有 1-2 秒僵直，操作需等场景落定，保底 6 秒
-        if elapsed < 6:
-            time.sleep(6 - elapsed)
+        floor = self.__transport_wait if self.__transport_wait is not None else 6
+        self.__transport_wait = None  # 一次性覆盖，用完即恢复默认 6 秒
+        # 传送后角色有 1-2 秒僵直，且每次进图还有初始加载，保底 floor 秒（默认6，实测可调）
+        if elapsed < floor:
+            time.sleep(floor - elapsed)
         self.move_to_program()
+
+    # 设置下一次传送的一次性保底等待（秒）；用完自动恢复默认
+    def set_transport_wait(self, seconds):
+        self.__transport_wait = float(seconds)
 
     #
     @abstractmethod

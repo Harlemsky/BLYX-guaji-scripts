@@ -7,7 +7,7 @@ from tkinter import ttk, Button
 
 from pynput import keyboard
 
-from base import load_calibration
+from base import CALIBRATION_PATH, calibration_size, load_calibration
 from golds.auto_kill_boss import KillBoss
 from killing.auto_kill_monsters import Killing53, Killing54
 from mines.auto_mining import Mines
@@ -40,7 +40,7 @@ def load_settings():
 
 
 def save_settings(width_cm, height_cm, mode, route, all_auto, first_transport, boss_refresh):
-    """保存界面配置，下次启动自动恢复。"""
+    """保存界面配置，下次启动自动恢复；窗口尺寸同时同步给校准文件。"""
     data = {
         "width_cm": width_cm,
         "height_cm": height_cm,
@@ -53,6 +53,57 @@ def save_settings(width_cm, height_cm, mode, route, all_auto, first_transport, b
     SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+    sync_size_to_calibration(width_cm, height_cm)
+
+
+def sync_size_to_calibration(width_cm, height_cm):
+    """把界面里填的窗口尺寸写进校准文件，界面上填的值就是唯一的那个尺寸。
+
+    首次同步时，把校准文件里原来的 window_* 记进 calibrated_*，保留“校准时
+    用的是多大窗口”这个信息，之后再改尺寸也不会把它冲掉。
+    """
+    if not CALIBRATION_PATH.exists():
+        return
+    try:
+        with open(CALIBRATION_PATH, encoding="utf-8") as f:
+            calib = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return
+    if not isinstance(calib, dict):
+        return
+    try:
+        new_w = float(width_cm)
+        new_h = float(height_cm)
+    except (TypeError, ValueError):
+        return
+    if calib.get("calibrated_width_cm") is None and calib.get("window_width_cm") is not None:
+        calib["calibrated_width_cm"] = calib["window_width_cm"]
+    if calib.get("calibrated_height_cm") is None and calib.get("window_height_cm") is not None:
+        calib["calibrated_height_cm"] = calib["window_height_cm"]
+    calib["window_width_cm"] = new_w
+    calib["window_height_cm"] = new_h
+    try:
+        with open(CALIBRATION_PATH, "w", encoding="utf-8") as f:
+            json.dump(calib, f, ensure_ascii=False, indent=2)
+    except OSError:
+        pass
+
+
+def size_mismatch_note(width_cm, height_cm):
+    """当前宽高与校准时填的不同时返回提醒文本，一致或没有校准时返回空串。
+
+    校准坐标照常生效，这只是提醒“尺寸数字换过口径”；窗口真的改过大小才需要重新校准。
+    """
+    size = calibration_size(load_calibration())
+    if not size:
+        return ""
+    try:
+        same = abs(size[0] - float(width_cm)) < 0.05 and abs(size[1] - float(height_cm)) < 0.05
+    except (TypeError, ValueError):
+        return ""
+    if same:
+        return ""
+    return f"（提示：与校准时填的 {size[0]:g} × {size[1]:g} 不同，窗口真的改过大小请重新校准）"
 
 
 class TaskManager:
@@ -152,7 +203,7 @@ def create_window():
     title_label = tk.Label(win, text="请设置小程序宽高", font=('Arial', 12))
     title_label.grid(row=0, column=1, columnspan=2, pady=10)
 
-    # 恢复上次配置：尺寸优先用校准文件（校准坐标只在尺寸匹配时生效），其余用上次保存的设置
+    # 恢复上次配置：尺寸优先用校准文件（两边同步同一个值），其余用上次保存的设置
     settings = load_settings()
     calib = load_calibration()
     default_w = str(calib["window_width_cm"]) if calib and calib.get("window_width_cm") is not None \
@@ -290,7 +341,7 @@ def create_window():
     # 状态标签
     if calib:
         status_var = tk.StringVar(
-            value=f"状态: 已加载校准({default_w} × {default_h})，请保持窗口尺寸一致"
+            value=f"状态: 已加载校准坐标（窗口尺寸 {default_w} × {default_h}）"
         )
     else:
         status_var = tk.StringVar(value="状态: 准备就绪")
@@ -331,7 +382,7 @@ def create_window():
             )
             # 勾选=本次启动使用首次坐标，启动后自动取消勾选
             first_transport_var.set(False)
-            status_var.set("状态: 运行中 - " + mode)
+            status_var.set("状态: 运行中 - " + mode + size_mismatch_note(width, height))
             start_btn.config(state=tk.DISABLED)
             stop_btn.config(state=tk.NORMAL)
         except ValueError:

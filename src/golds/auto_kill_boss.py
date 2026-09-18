@@ -141,11 +141,12 @@ class KillBoss(AutoPlay):
         budget = last_pause + after_kill + 30
         self._wait_battle_end(budget=budget)
 
-    def _wait_battle_end(self, budget, grace=1.5):
-        """等待战斗结束：先给 grace 秒开战时间，之后画面连续稳定约 1.5 秒视为结束。
+    def _wait_battle_end(self, budget, grace=1.0, min_fight=2.0, required_stable=2):
+        """等待战斗结束：观察到战斗活动后，连续静止约 1.0 秒才算结束。
 
-        不依赖血条模板（不同 Boss 血条位置不同、倒地后 UI 不消失），
-        用“角色停止攻击 → 画面静止”判断，对任何 Boss 通用。
+        战斗中的间歇（技能冷却、Boss 待机）画面会短暂静止，不能据此判定结束；
+        只有“有过活动，然后长时间静止”才可信。若全程无任何活动（如 Boss 已死），
+        则至少等够 min_fight 秒再结束。
         """
         rect = get_game_rect() or (0, 0, 500, 800)
         if grab_region(rect) is None:
@@ -154,6 +155,7 @@ class KillBoss(AutoPlay):
         deadline = start + budget
         prev = None
         stable_streak = 0
+        observed_activity = False
         while time.time() < deadline:
             if time.time() - start >= grace:
                 frame = grab_region(rect)
@@ -162,9 +164,14 @@ class KillBoss(AutoPlay):
                     continue
                 if prev is not None and frame.shape == prev.shape:
                     diff = float(np.mean(np.abs(frame.astype(np.int16) - prev.astype(np.int16))))
-                    stable_streak = stable_streak + 1 if diff < 3.0 else 0
-                    if stable_streak >= 3:  # 约 1.5 秒稳定
-                        return True
+                    if diff >= 3.0:
+                        observed_activity = True
+                        stable_streak = 0
+                    else:
+                        stable_streak += 1
+                        if stable_streak >= required_stable and (
+                                observed_activity or time.time() - start >= min_fight):
+                            return True
                 prev = frame
             time.sleep(0.5)
         return False
@@ -172,7 +179,13 @@ class KillBoss(AutoPlay):
     def _refresh_boss(self):
         refresh = self._config["refresh"]
         self.transport(refresh["map"], refresh["level"])
-        self.go_home_with_confirm()
+        # 到达5-1后先等场景落定（arrive_wait 秒），再操作回城
+        time.sleep(refresh.get("arrive_wait", 0))
+        # 刷新后的下一次传送（下一轮第一个Boss）保底 first_transport_wait 秒（默认 8）
+        self.set_transport_wait(refresh.get("first_transport_wait", 8))
+        # return_home: true=到5-1后回城（默认）；false=不回城，直接开始下一轮传送
+        if refresh.get("return_home", True):
+            self.go_home_with_confirm()
         time.sleep(refresh.get("wait_seconds", 10))
 
     # ---------- AutoPlay 抽象方法 ----------
@@ -199,3 +212,7 @@ class KillBoss(AutoPlay):
         # 路线允许刷新 且 界面勾选了刷新时，才执行 5-1 换图回城刷新
         if self._config.get("refresh_enabled", True) and self.__use_refresh:
             self._refresh_boss()
+        # 刷新后：下一轮第一个传送使用更长的保底等待（first_transport_wait），一次性
+        first_wait = self._config.get("refresh", {}).get("first_transport_wait")
+        if first_wait:
+            self.set_transport_wait(first_wait)
